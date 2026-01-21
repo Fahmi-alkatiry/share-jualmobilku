@@ -151,84 +151,39 @@ async function deletePhysicalFile(fileUrl: string | null) {
   }
 }
 
+
 export async function updateCar(id: string, formData: FormData) {
   try {
-    // 1. Ambil data mobil yang ada saat ini (Existing Data)
-    const existingCar = await prisma.car.findUnique({ where: { id } })
-    if (!existingCar) return { success: false, message: "Mobil tidak ditemukan" }
-
-    // 2. Ambil data teks dari form
-    const brand = formData.get("brand") as string
-    const model = formData.get("model") as string
-    const year = parseInt(formData.get("year") as string)
-    const price = parseFloat(formData.get("price") as string)
-    const mileage = parseInt(formData.get("mileage") as string)
-    const transmission = formData.get("transmission") as "MANUAL" | "AUTOMATIC"
-    const color = formData.get("color") as string
-    const licensePlate = formData.get("licensePlate") as string
-    const taxExpiry = new Date(formData.get("taxExpiry") as string)
-    const stnkOwnership = formData.get("stnkOwnership") as string
-    const description = formData.get("description") as string
+    const existingCar = await prisma.car.findUnique({ where: { id } });
+    if (!existingCar) return { success: false };
 
     // --- LOGIKA UPDATE FOTO ---
-    const imageFiles = formData.getAll("images") as File[]
-    let finalImagePaths = existingCar.images
+    const imageFiles = formData.getAll("images") as File[];
+    
+    // TAMBAHKAN TYPE CASTING DI SINI:
+    const oldImagesArray = existingCar.images as string[]; 
+    let finalImagePaths = oldImagesArray;
 
-    // Jika ada foto baru yang diunggah (file pertama size > 0)
     if (imageFiles.length > 0 && imageFiles[0].size > 0) {
-      // A. Hapus semua FOTO LAMA dari folder public
-      for (const oldPath of existingCar.images) {
-        await deletePhysicalFile(oldPath)
+      // A. Gunakan oldImagesArray yang sudah di-cast untuk looping
+      for (const oldPath of oldImagesArray) {
+        await deletePhysicalFile(oldPath);
       }
 
-      // B. Upload FOTO BARU
-      const newPaths: string[] = []
+      // B. Upload FOTO BARU (logika tetap sama)
+      const newPaths: string[] = [];
       for (const file of imageFiles) {
-        const buffer = Buffer.from(await file.arrayBuffer())
-        const fileName = `${Date.now()}-img-${file.name.replace(/\s+/g, '-')}`
-        const filePath = path.join(process.cwd(), "public/uploads", fileName)
-        await writeFile(filePath, buffer)
-        newPaths.push(`/uploads/${fileName}`)
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const fileName = `${Date.now()}-img-${file.name.replace(/\s+/g, '-')}`;
+        const filePath = path.join(process.cwd(), "public/uploads", fileName);
+        await writeFile(filePath, buffer);
+        newPaths.push(`/uploads/${fileName}`);
       }
-      finalImagePaths = newPaths
+      finalImagePaths = newPaths;
     }
-
-    // --- LOGIKA UPDATE VIDEO ---
-    const videoFile = formData.get("video") as File
-    let finalVideoPath = existingCar.video
-
-    // Jika ada video baru yang diunggah
-    if (videoFile && videoFile.size > 0) {
-      // A. Hapus VIDEO LAMA dari folder public
-      if (existingCar.video) {
-        await deletePhysicalFile(existingCar.video)
-      }
-
-      // B. Upload VIDEO BARU
-      const videoBuffer = Buffer.from(await videoFile.arrayBuffer())
-      const videoName = `${Date.now()}-video-${videoFile.name.replace(/\s+/g, '-')}`
-      const videoFullPath = path.join(process.cwd(), "public/uploads", videoName)
-      await writeFile(videoFullPath, videoBuffer)
-      finalVideoPath = `/uploads/${videoName}`
-    }
-
-    // 3. Update Database dengan data baru (atau data lama jika tidak ada media baru)
-    await prisma.car.update({
-      where: { id },
-      data: {
-        brand, model, year, price, mileage, transmission,
-        color, licensePlate, taxExpiry, stnkOwnership, description,
-        images: finalImagePaths,
-        video: finalVideoPath,
-      }
-    })
-
-    revalidatePath("/")
-    revalidatePath("/admin")
-    revalidatePath(`/cars/${id}`)
-    return { success: true }
+    
+    // ... (sisa kode update database)
   } catch (error) {
-    console.error("Gagal update mobil:", error)
-    return { success: false }
+    return { success: false };
   }
 }
