@@ -10,17 +10,25 @@ export default function EditCarForm({ car }: { car: any }) {
   const router = useRouter()
   const [isPending, setIsPending] = useState(false)
 
-  async function handleSubmit(formData: FormData) {
-    setIsPending(true)
+async function handleSubmit(formData: FormData) {
+  setIsPending(true)
+  try {
     const result = await updateCar(car.id, formData)
-    if (result.success) {
+    
+    // Gunakan optional chaining (?.) untuk keamanan
+    if (result?.success) { 
       alert("Perubahan berhasil disimpan!")
       router.push("/admin")
       router.refresh()
+    } else {
+      alert("Gagal menyimpan perubahan. Silakan coba lagi.")
     }
+  } catch (error) {
+    alert("Terjadi kesalahan sistem.")
+  } finally {
     setIsPending(false)
   }
-
+}
   return (
     <form action={handleSubmit} className="space-y-6 bg-white p-8 rounded-2xl border shadow-sm">
       <div className="grid grid-cols-2 gap-4">
