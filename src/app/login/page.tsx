@@ -11,16 +11,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(""); // Reset error setiap kali mencoba login
+
+  try {
     const result = await signIn("credentials", {
       username,
       password,
-      redirect: true,
-      callbackUrl: "/admin",
-    })
-    if (!result) await setError("Username atau Password salah!")
+      redirect: false, // SANGAT PENTING: Agar kita bisa menangkap error secara manual
+    });
+
+    // Cek apakah ada error yang dikembalikan
+    if (result?.error) {
+      setError("Username atau Password salah!");
+    } else {
+      // Jika berhasil, arahkan ke admin secara manual
+      router.push("/admin");
+      router.refresh();
+    }
+  } catch (err) {
+    setError("Terjadi kesalahan koneksi ke server.");
   }
+};
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
