@@ -1,39 +1,41 @@
 "use client"
 import { signIn } from "next-auth/react"
 import { useState } from "react"
+import { useRouter } from "next/navigation" // 1. Import ini
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock } from "lucide-react"
 
 export default function LoginPage() {
+  const router = useRouter() // 2. Definisikan ini di dalam komponen
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
 
-const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError(""); // Reset error setiap kali mencoba login
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
 
-  try {
-    const result = await signIn("credentials", {
-      username,
-      password,
-      redirect: false, // SANGAT PENTING: Agar kita bisa menangkap error secara manual
-    });
+    try {
+      // Kita gunakan signIn dari next-auth/react
+      const result = await signIn("credentials", {
+        username,
+        password,
+        redirect: false, // Agar tidak otomatis redirect jika error
+      })
 
-    // Cek apakah ada error yang dikembalikan
-    if (result?.error) {
-      setError("Username atau Password salah!");
-    } else {
-      // Jika berhasil, arahkan ke admin secara manual
-      router.push("/admin");
-      router.refresh();
+      if (result?.error) {
+        setError("Username atau Password salah!")
+      } else {
+        // 3. Sekarang router.push akan berfungsi
+        router.push("/admin")
+        router.refresh()
+      }
+    } catch (err) {
+      setError("Terjadi kesalahan sistem.")
     }
-  } catch (err) {
-    setError("Terjadi kesalahan koneksi ke server.");
   }
-};
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
@@ -64,7 +66,7 @@ const handleLogin = async (e: React.FormEvent) => {
                 required 
               />
             </div>
-            {error && <p className="text-center text-xs font-bold text-red-500">{error}</p>}
+            {error && <p className="text-center text-[10px] font-black uppercase text-red-500 bg-red-50 py-2 rounded">{error}</p>}
             <Button type="submit" className="w-full bg-blue-600 font-bold h-12">
               MASUK KE DASHBOARD
             </Button>
