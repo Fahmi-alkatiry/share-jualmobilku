@@ -11,32 +11,34 @@ import {
   ShieldCheck, 
   Palette, 
   UserCircle,
-  Download,
-  Share2
+  Download
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-// 1. GENERATE METADATA (Penting untuk Preview WhatsApp)
+// 1. GENERATE METADATA (Untuk Preview WhatsApp yang Profesional)
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const car = await prisma.car.findUnique({ where: { id } });
   
   if (!car) return { title: "Mobil Tidak Ditemukan" };
 
+  // Konversi Json ke String Array untuk metadata
+  const images = car.images as string[];
+
   return {
     title: `${car.brand} ${car.model} ${car.year} - JualMobilKu`,
-    description: `Cek detail mobil ${car.brand} ${car.model}. KM ${car.mileage.toLocaleString()}, Harga Rp ${car.price.toLocaleString('id-ID')}`,
+    description: `Cek detail mobil ${car.brand} ${car.model}. Harga Rp ${car.price.toLocaleString('id-ID')}`,
     openGraph: {
-      images: car.images.length > 0 ? [car.images[0]] : [],
+      images: images.length > 0 ? [images[0]] : [],
     },
   };
 }
 
 // 2. MAIN PAGE COMPONENT
 export default async function CarDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  // Await params karena di Next.js 15/16 params adalah Promise
+  // Await params untuk kompatibilitas Next.js 15/16
   const { id } = await params;
 
   const car = await prisma.car.findUnique({
@@ -45,8 +47,11 @@ export default async function CarDetailPage({ params }: { params: Promise<{ id: 
 
   if (!car) notFound();
 
+  // KRUSIAL: Konversi data Json dari MySQL menjadi Array String agar bisa di-map
+  const carImages = car.images as string[];
+
   // Konfigurasi WhatsApp
-  const waNumber = "628123456789"; // Ganti dengan nomor Anda
+  const waNumber = "628123456789"; // GANTI DENGAN NOMOR ANDA
   const waMessage = `Halo, saya tertarik dengan mobil ${car.brand} ${car.model} (${car.year}) yang ada di website. Apakah unitnya masih tersedia?`;
   const waLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`;
 
@@ -57,7 +62,7 @@ export default async function CarDetailPage({ params }: { params: Promise<{ id: 
         {/* SISI KIRI: GALERI MEDIA & DOWNLOAD */}
         <div className="space-y-6">
           <div className="flex flex-col gap-6">
-            {car.images.map((img, index) => (
+            {carImages.map((img, index) => (
               <div key={index} className="group relative aspect-video rounded-3xl overflow-hidden bg-slate-100 border shadow-sm">
                 <Image 
                   src={img} 
@@ -161,7 +166,7 @@ export default async function CarDetailPage({ params }: { params: Promise<{ id: 
               </Card>
             )}
 
-            {/* Action Buttons */}
+            {/* Tombol Kontak Utama */}
             <div className="flex flex-col gap-4">
               <Link href={waLink} target="_blank">
                 <Button className="w-full h-20 text-xl font-black bg-green-600 hover:bg-green-700 shadow-xl shadow-green-100 gap-4 rounded-[1.5rem] transition-all hover:scale-[1.02]">
